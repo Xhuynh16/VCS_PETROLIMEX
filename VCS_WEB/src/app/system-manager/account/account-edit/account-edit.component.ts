@@ -10,6 +10,7 @@ import { ActivatedRoute } from '@angular/router'
 import { AuthService } from '../../../services/auth.service'
 import { GlobalService } from '../../../services/global.service'
 import { AccountGroupService } from '../../../services/system-manager/account-group.service'
+import { WarehouseService } from '../../../services/master-data/warehouse.service'
 
 @Component({
   selector: 'app-account-edit',
@@ -45,6 +46,7 @@ export class AccountEditComponent {
     isActive: [true],
     accountType: ['', [Validators.required]],
     organizeCode: ['', [Validators.required]],
+    warehouseCode: ['', [Validators.required]],
     //partnerId: [''],
   })
 
@@ -57,7 +59,8 @@ export class AccountEditComponent {
   // isShowSelectPartner: boolean = false
   accountType: any[] = []
   orgList: any[] = []
-
+  warehouseList: any[] = []
+  selectedOrg = this.validateForm.getRawValue().organizeCode;
   constructor(
     private _service: AccountService,
     private fb: NonNullableFormBuilder,
@@ -67,6 +70,7 @@ export class AccountEditComponent {
     private route: ActivatedRoute,
     private authService: AuthService,
     private globalService: GlobalService,
+    private warehouseService: WarehouseService
   ) {
     this.widthDeault =
       window.innerWidth <= 767
@@ -83,19 +87,28 @@ export class AccountEditComponent {
     this.getAllAccountType()
     this.getRight()
     this.getAllOrg()
+    
   }
 
   getAllOrg() {
     this.dropdownService.getAllOrg().subscribe({
       next: (data) => {
         this.orgList = data
-        console.log("đơn vị", this.orgList);
-
       },
       error: (response) => {
         console.log(response)
       },
     })
+  }
+  getWareHouse(){
+    this.warehouseService.getByOrg(this.selectedOrg).subscribe(
+      {next: (data) => {
+      this.warehouseList = data
+    },
+    error: (response) => {
+      console.log(response)
+    },
+  })
   }
   changeSaleType(value: string) { }
   getRight() {
@@ -246,8 +259,10 @@ export class AccountEditComponent {
             isActive: data.isActive,
             accountType: data.accountType,
             organizeCode: data.organizeCode,
+            warehouseCode: data.warehouseCode,
             //partnerId: data.partnerId || '',
           })
+        
           //this.isShowSelectPartner = data.accountType === 'KH' ? true : false
           this.initialCheckedNodes = data?.listAccountGroupRight?.map(
             (node: any) => node.rightId,
@@ -255,12 +270,13 @@ export class AccountEditComponent {
           this.nodes = this.mapTreeNodes(data.treeRight)
           this.nodesConstant = [...this.mapTreeNodes(data.treeRight)]
           this.loadGroupRights(data.account_AccountGroups)
-          console.log('detai Data', data)
+         
         },
         error: (response) => {
           console.log(response)
         },
       })
+        
   }
   loadGroupRights(accountGroups: any[]) {
     const groupIds = accountGroups.map((group) => group.groupId)
